@@ -16,8 +16,6 @@ def add_font(font, alias=None):
 
 def text(text, alias=None, size=None, width=None, color=None, bg_color=None, position=(0, 0)):
     surface = _manager.render(text, alias, size, width, color, bg_color)
-    sprite = sp._factory.from_surface(surface)
-    if sp.GlRenderer:
-        sdl2.SDL_FreeSurface(surface)
+    sprite = sp.from_surface(surface, True)
     sprite.position = position
-    return sp.SpriteProxy(sprite)
+    return sprite
