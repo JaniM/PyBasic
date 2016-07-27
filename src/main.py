@@ -25,6 +25,7 @@ class Rect:
             self.x = self.x1
             self.speed *= -1
         self.rect.x = int(self.x)
+        self.rect.angle += 180 * delta
     
     def render(self):
         render(self.rect)
