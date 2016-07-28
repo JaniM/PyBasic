@@ -26,7 +26,23 @@ class TextureSprite(sdl2.ext.TextureSprite):
         self.angle = angle
         self.pivot = pivot
         self.flip = flip
+        self.tint = (255, 255, 255)
+        self.alpha = 255
         self.depth = depth
+    
+    def render_copy(self, renderer, x, y, r):
+        r.x, r.y = x + self.x, y + self.y
+        r.w = int(self.size[0] * self.scale[0])
+        r.h = int(self.size[1] * self.scale[1])
+        sdl2.SDL_SetTextureColorMod(self.texture, *self.tint)
+        #sdl2.SDL_SetTextureAlphaMod(self.texture, self.alpha)
+        sdl2.SDL_RenderCopyEx(renderer,
+                              self.texture,
+                              None,
+                              r,
+                              self.angle,
+                              self.pivot,
+                              self.flip)
 
 class SoftwareSprite(sdl2.ext.SoftwareSprite):
     def __init__(self, surface, position=(0, 0), scale=(1, 1), angle=0.0, pivot=None, flip=sdl2.SDL_FLIP_NONE, depth=0, free=False):
@@ -44,18 +60,10 @@ class TextureRenderer(sdl2.ext.TextureSpriteRenderSystem):
 
     def render(self, sprites, x=0, y=0):
         r = sdl2.rect.SDL_Rect(0, 0, 0, 0)
+        rend = self.sdlrenderer
         for sp in sprites:
-            r.x, r.y = x + sp.x, y + sp.y
-            r.w = int(sp.size[0] * sp.scale[0])
-            r.h = int(sp.size[1] * sp.scale[1])
-            sdl2.SDL_RenderCopyEx(self.sdlrenderer,
-                                  sp.texture,
-                                  None,
-                                  r,
-                                  sp.angle,
-                                  sp.pivot,
-                                  sp.flip)
-        sdl2.SDL_RenderPresent(self.sdlrenderer)
+            sp.render_copy(rend, x, y, r)
+        sdl2.SDL_RenderPresent(rend)
 
 def define_renderer(renderer):
     global _factory
@@ -75,27 +83,38 @@ def use_software_renderer():
 def use_texture_renderer():
     define_renderer(sdl2.ext.TEXTURE)
 
-def _create_surface(width, height):
-    s = sdl2.SDL_CreateRGBSurface(0,width,height,32,0,0,0,0x000000ff);
+def _create_surface(width, height, masks=(0, 0, 0, 0)):
+    s = sdl2.SDL_CreateRGBSurface(0,width,height,32,*masks);
     return s
 
-def from_surface(surface, free=True):
+def from_surface(surface, free=True, texture=False):
     if GlRenderer:
         tex = sdl2.SDL_CreateTextureFromSurface(GlRenderer.renderer, surface)
-        sprite = TextureSprite(tex)
+        if texture:
+            sprite = tex
+        else:
+            sprite = TextureSprite(tex)
         if free:
             sdl2.SDL_FreeSurface(surface)
     else:
         sprite = SoftwareSprite(surface, free=free)
     return sprite
 
-def rectangle(color, size, position=(0, 0)):
+def from_texture(tex):
+    return TextureSprite(tex)
+
+def rectangle(color, size, position=(0, 0), alpha=False, texture=False):
     color = sdl2.ext.convert_to_color(color)
-    s = _create_surface(*size)
-    color = sdl2.SDL_MapRGBA(s.contents.format.contents, color.r, color.g, color.b, color.a)
+    if alpha:
+        s = _create_surface(*size, masks=(0xff000000,0x00ff0000,0x0000ff00,0x000000ff))
+        color = sdl2.SDL_MapRGBA(s.contents.format.contents, color.r, color.g, color.b, color.a)
+    else:
+        s = _create_surface(*size)
+        color = sdl2.SDL_MapRGB(s.contents.format.contents, color.r, color.g, color.b)
     sdl2.SDL_FillRect(s, None, color)
-    rect = from_surface(s, True)
-    rect.position = position
+    rect = from_surface(s, True, texture)
+    if not texture:
+        rect.position = position
     return rect
 
 def render(sprite):

@@ -38,7 +38,7 @@ def loop(target_fps=60, fps_update=250):
                 return
         for cb in callbacks[TICK]:
             cb(delta, ticks_per_sec)
-        sleeptime = (1./target_fps - delta)*1000
+        sleeptime = (1000/target_fps - sdl2.timer.SDL_GetTicks() + last_time)
         sleeptime = int(sleeptime)
         if sleeptime > 0:
             #print(int((1./target_fps - delta)*1000))

@@ -10,11 +10,12 @@ def update_all(ents, delta):
         x.update(delta)
 
 class Rect:
+    __slots__ = 'x x1 x2 speed rect'.split()
     def __init__(self, x1, x2, speed, y, w, h, color):
         self.x = (x1 + x2) / 2
         self.x1, self.x2 = x1, x2
         self.speed = speed
-        self.rect = rectangle(color, (w, h), (x1, y))
+        self.rect = rectangle(color, (w, h), (x1, y), alpha=True)
     
     def update(self, delta):
         self.x += self.speed * delta
@@ -25,26 +26,27 @@ class Rect:
             self.x = self.x1
             self.speed *= -1
         self.rect.x = int(self.x)
-        self.rect.angle += 180 * delta
+        self.rect.angle += abs(self.speed) * delta
     
     def render(self):
         render(self.rect)
 
-create_window("Test", (400, 300))
+create_window("Test", (400, 1010))
 use_texture_renderer()
 add_font('res/Roboto-Regular.ttf', 'Roboto')
 
 rects = []
-for i in range(5):
-    color = [random.randint(0, 255) for _ in range(3)]
-    rects.append(Rect(150 - i*10, 150 + i*10, i*20, 70 + i*30, 100, 20, color))
+for i in range(1000):
+    color = [random.randint(0, 255) for _ in range(3)] + [100]
+    #rects.append(Rect(150 - i*20, 150 + i*20, i*20, 10 + i*1, 100, 20, color))
+    rects.append(Rect(150, 150, i*20, 10 + i*1, 100, 20, color))
 
 def update(delta, fps):
     update_all(rects, delta)
     render(rects)
-    render(text("FPS: {}".format(fps), position=(10, 10)))
+    render(text("Delta: {}\nFPS: {}".format(delta, fps), position=(10, 10), width=400))
     refresh_window()
 
 events.register(events.TICK, update)
-events.loop(1000)
+events.loop(10000)
 
