@@ -1,6 +1,7 @@
 
 import sdl2, sdl2.ext
 import pybasic.sprite as sp
+import pybasic.draw as draw
 
 __all__ = ['create_window', 'refresh_window', 'get_window']
 

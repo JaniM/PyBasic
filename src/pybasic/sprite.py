@@ -2,6 +2,7 @@
 import collections
 import sdl2, sdl2.ext
 import pybasic.window
+import pybasic.draw as draw
 from pybasic.proxy import Proxy
 
 __all__ = ['use_software_renderer', 'use_texture_renderer', 'rectangle', 'render']
@@ -83,17 +84,10 @@ def use_software_renderer():
 def use_texture_renderer():
     define_renderer(sdl2.ext.TEXTURE)
 
-def _create_surface(width, height, masks=(0, 0, 0, 0)):
-    s = sdl2.SDL_CreateRGBSurface(0,width,height,32,*masks);
-    return s
-
 def from_surface(surface, free=True, texture=False):
     if GlRenderer:
         tex = sdl2.SDL_CreateTextureFromSurface(GlRenderer.renderer, surface)
-        if texture:
-            sprite = tex
-        else:
-            sprite = TextureSprite(tex)
+        sprite = TextureSprite(tex)
         if free:
             sdl2.SDL_FreeSurface(surface)
     else:
@@ -103,18 +97,12 @@ def from_surface(surface, free=True, texture=False):
 def from_texture(tex):
     return TextureSprite(tex)
 
-def rectangle(color, size, position=(0, 0), alpha=False, texture=False):
-    color = sdl2.ext.convert_to_color(color)
-    if alpha:
-        s = _create_surface(*size, masks=(0xff000000,0x00ff0000,0x0000ff00,0x000000ff))
-        color = sdl2.SDL_MapRGBA(s.contents.format.contents, color.r, color.g, color.b, color.a)
-    else:
-        s = _create_surface(*size)
-        color = sdl2.SDL_MapRGB(s.contents.format.contents, color.r, color.g, color.b)
-    sdl2.SDL_FillRect(s, None, color)
-    rect = from_surface(s, True, texture)
-    if not texture:
-        rect.position = position
+def rectangle(color, size, position=(0, 0), alpha=False):
+    s = draw.surface(size, alpha=alpha)
+    with draw.context(s):
+        draw.rectangle(color, size, alpha=alpha)
+    rect = from_surface(s, True)
+    rect.position = position
     return rect
 
 def render(sprite):
